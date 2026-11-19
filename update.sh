@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # update.sh — met à jour et (re)démarre le Planner 2027 sur un serveur Linux (ex. VPS).
 # Usage :  ./update.sh            (depuis la racine du projet)
-# Variables optionnelles :  PORT=5000  APP_NAME=planner-2027  SKIP_FRONT=1 (ne pas recompiler le front)
+# Variables optionnelles :
+#   PORT=5000  APP_NAME=planner-2027  SKIP_FRONT=1 (ne pas recompiler le front)
+#   COOKIE_SECURE=1   à mettre derrière HTTPS (cookie de connexion réservé au HTTPS)
+#   WEB_ROOT=/var/www/planner-2027   dossier servi par nginx (copie du front compilé si le dossier existe)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -45,6 +48,7 @@ fi
 
 echo "==> 5/5 Redémarrage"
 export PORT
+[ -n "${COOKIE_SECURE:-}" ] && export COOKIE_SECURE
 if command -v pm2 >/dev/null 2>&1; then
   if pm2 describe "$APP_NAME" >/dev/null 2>&1; then
     pm2 restart "$APP_NAME" --update-env
@@ -56,6 +60,11 @@ if command -v pm2 >/dev/null 2>&1; then
 else
   echo "    PM2 absent. Pour lancer à la main :"
   echo "      cd backend && PORT=$PORT .venv/bin/python app.py"
+fi
+
+if [ -d "${WEB_ROOT:-/var/www/planner-2027}" ]; then
+  rsync -a --delete frontend/dist/ "${WEB_ROOT:-/var/www/planner-2027}/"
+  echo "    Front copié dans ${WEB_ROOT:-/var/www/planner-2027} (nginx)"
 fi
 
 echo "Terminé."

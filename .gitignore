@@ -1,0 +1,6 @@
+backend/planner.db
+backend/.secret_key
+backend/.venv/
+backend/__pycache__/
+backups/
+frontend/node_modules/
